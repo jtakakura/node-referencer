@@ -1,0 +1,2 @@
+class_name ClassNameTest
+extends Node2D
