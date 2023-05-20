@@ -34,6 +34,25 @@ func _enter_tree() -> void:
 
 	get_editor_interface().get_selection().connect("selection_changed", _update_button_visibility)
 
+func _input(event):
+	if event is InputEventKey\
+	and event.keycode == KEY_C\
+	and event.shift_pressed\
+	and event.ctrl_pressed\
+	and get_editor_interface().get_selection().get_selected_nodes().size() > 0:
+		var copy_code = ""
+		var interface:EditorInterface =  get_editor_interface()
+		var current_scene_root:Node = interface.get_edited_scene_root()
+		for selected_node in get_editor_interface().get_selection().get_selected_nodes():
+			var code = ""
+			var script:Script = selected_node.get_script()
+			if script != null:
+				code = script.source_code
+			copy_code += _generate_reference(selected_node, current_scene_root, code)
+			copy_code += "\n"
+		copy_code = copy_code.trim_suffix("\n")
+		DisplayServer.clipboard_set(copy_code)
+
 
 func _update_button_visibility() -> void:
 	var selection: Array = get_editor_interface().get_selection().get_selected_nodes()
@@ -179,7 +198,7 @@ func _alter_code(code: String, node: Node, parent: Node) -> String:
 
 func _splitup_code(code: String) -> PackedStringArray:
 	var start_split: PackedStringArray = code.split(REFERENCE_BLOCK_START + "\n", true, 1)
-	
+
 	if start_split.size() > 1:
 		var block_and_end: PackedStringArray = start_split[1].split(REFERENCE_BLOCK_STOP, true, 1)
 		return PackedStringArray([start_split[0], block_and_end[0], block_and_end[1]])
@@ -236,8 +255,8 @@ func _generate_variable_name(node: Node, code: String) -> String:
 
 func _generate_node_path(node: Node, parent: Node) -> String:
 	if node.unique_name_in_owner:
-		return "get_node(\"%%%s\")" % node.name
-		
+		return "%%%s" % node.name
+
 	var node_path: String = parent.get_path_to(node)
 
 	if " " in node_path or "@" in node_path:
